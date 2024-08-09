@@ -1,0 +1,103 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    # tags:
+    #   - 'v*'  # Trigger only when a tag starting with 'v' is pushed
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Name of the tag'
+        required: false
+        default: 'v1.0.0'
+      upload_artifact:
+        description: 'Upload artifact to release'
+        required: false
+        default: 'true'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+
+    - run: pip install -r requirements.txt
+    - run: pyinstaller generate_bibleverse_ppt.py --onefile --icon=bibleverse2ppt.ico --name=bibleverse2ppt
+    # Optionally verify that it works (provided that it does not need user interaction)
+    - run: ./dist/bibleverse2ppt.exe
+    - uses: actions/upload-artifact@v2
+      with:
+        name: build-artifact
+        path: dist/*
+
+        
+  release:
+    runs-on: windows-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download Build Artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: build-artifact
+        path: ./dist
+
+    - name: Determine Tag Name
+      id: determine_tag_name
+      run: |
+        if ($env:GITHUB_REF -like "refs/tags/*") {
+          # Extract the tag name from GITHUB_REF
+          $tag_name = $env:GITHUB_REF.Substring(10)  # Remove 'refs/tags/' (10 characters)
+          echo "::set-output name=tag_name::$tag_name"
+        } else {
+          # Use the tag_name from the event input
+          $tag_name = "${{ github.event.inputs.tag_name }}"
+          echo "::set-output name=tag_name::$tag_name"
+        }
+
+    - name: Check for Existing Tag
+      id: check_tag
+      run: |
+        $existing_tag = $(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" `
+          https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ env.tag_name }} | `
+          jq -r '.[] | select(.ref == "refs/tags/${{ env.tag_name }}") | .object.sha')
+        if ($existing_tag -ne $null) {
+          echo "tag_exists=true" | Out-File -FilePath $env:GITHUB_ENV -Append
+        } else {
+          echo "tag_exists=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+        }
+        
+    - name: Create Release
+      id: create_release
+      if: env.tag_exists == 'false'  # Only create release if tag does not exist
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
+      with:
+        tag_name: ${{ steps.determine_tag_name.outputs.tag_name }}
+        release_name: ${{ steps.determine_tag_name.outputs.tag_name }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      if: ${{ github.event.inputs.upload_artifact == 'true' && env.tag_exists == 'false' }}  # Only upload if tag does not exist
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/bibleverse2ppt.exe
+        asset_name: bibleverse2ppt.exe
+        asset_content_type: application/octet-stream
