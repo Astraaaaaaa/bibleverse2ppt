@@ -73,7 +73,7 @@ jobs:
     - name: Check for Existing Tag
       id: check_tag
       run: |
-        $existing_tag = $(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" `
+        $existing_tag = $(curl -s -H "Authorization: token ${{ secrets.PAT }}" `
           https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ env.tag_name }} | `
           jq -r '.[] | select(.ref == "refs/tags/${{ env.tag_name }}") | .object.sha')
         if ($existing_tag -ne $null) {
