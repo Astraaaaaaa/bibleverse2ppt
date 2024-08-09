@@ -1,7 +1,5 @@
 # bibleverse2ppt
 
-# Bible Verse PowerPoint Generator
-
 <!-- ![ASCII Art](carbon.png) -->
 
 ```
