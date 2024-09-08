@@ -73,15 +73,14 @@ jobs:
     - name: Check for Existing Tag
       id: check_tag
       run: |
-        $response = $(curl -s -H "Authorization: token ${{ secrets.PAT }}" `
-          https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ env.tag_name }})
-        $existing_tag = $response | jq -r 'select(.ref == "refs/tags/${{ steps.determine_tag_name.outputs.tag_name }}") | .object.sha'
+        $existing_tag = $(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" `
+          https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ env.tag_name }} | `
+          jq -r '.[] | select(.ref == "refs/tags/${{ env.tag_name }}") | .object.sha')
         if ($existing_tag -ne $null) {
           echo "tag_exists=true" | Out-File -FilePath $env:GITHUB_ENV -Append
         } else {
           echo "tag_exists=false" | Out-File -FilePath $env:GITHUB_ENV -Append
         }
-      shell: pwsh
         
     - name: Create Release
       id: create_release
