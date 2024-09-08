@@ -73,9 +73,9 @@ jobs:
     - name: Check for Existing Tag
       id: check_tag
       run: |
-        $existing_tag = $(curl -s -H "Authorization: token ***" `
-          https://api.github.com/repos/Astraaaaaaa/bibleverse2ppt/git/refs/tags/ | `
-          jq -r '.[] | select(.ref | startswith("refs/tags/")) | .object.sha')
+        $existing_tag = $(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" `
+          https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ env.tag_name }} | `
+          jq -r '.[] | select(.ref == "refs/tags/${{ env.tag_name }}") | .object.sha')
         if ($existing_tag -ne $null) {
           echo "tag_exists=true" | Out-File -FilePath $env:GITHUB_ENV -Append
         } else {
