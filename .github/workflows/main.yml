@@ -95,7 +95,7 @@ jobs:
         prerelease: false
 
     - name: List dist directory contents
-      run: dir dist  # Use 'ls ./dist' if running on Linux
+      run: dir dist /A  # Use 'ls ./dist' if running on Linux
         
     - name: Upload Release Asset
       # if: ${{ github.event.inputs.upload_artifact == 'true' && env.tag_exists == 'false' }}  # Only upload if tag does not exist
