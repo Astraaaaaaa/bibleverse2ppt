@@ -163,7 +163,7 @@ def fetch_bible_verses(query_file, browser):
                     # Locate the specific form based on the determined index
                     # form = browser.find_element(By.XPATH, f"//form[{form_index}]")  # Adjust the index as needed
                     # Wait until the form is present before interacting with it
-                    form = WebDriverWait(browser, 10).until(
+                    form = WebDriverWait(browser, 20).until(
                         EC.presence_of_element_located((By.XPATH, f"//form[{form_index}]"))
                     )
 
