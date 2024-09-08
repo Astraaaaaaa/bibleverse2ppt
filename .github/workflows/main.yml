@@ -70,21 +70,21 @@ jobs:
           echo "::set-output name=tag_name::$tag_name"
         }
 
-    - name: Check for Existing Tag
-      id: check_tag
-      run: |
-        $existing_tag = $(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" `
-          https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ env.tag_name }} | `
-          jq -r '.[] | select(.ref == "refs/tags/${{ env.tag_name }}") | .object.sha')
-        if ($existing_tag -ne $null) {
-          echo "tag_exists=true" | Out-File -FilePath $env:GITHUB_ENV -Append
-        } else {
-          echo "tag_exists=false" | Out-File -FilePath $env:GITHUB_ENV -Append
-        }
+    # - name: Check for Existing Tag
+    #   id: check_tag
+    #   run: |
+    #     $existing_tag = $(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" `
+    #       https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ env.tag_name }} | `
+    #       jq -r '.[] | select(.ref == "refs/tags/${{ env.tag_name }}") | .object.sha')
+    #     if ($existing_tag -ne $null) {
+    #       echo "tag_exists=true" | Out-File -FilePath $env:GITHUB_ENV -Append
+    #     } else {
+    #       echo "tag_exists=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+    #     }
         
     - name: Create Release
       id: create_release
-      if: env.tag_exists == 'false'  # Only create release if tag does not exist
+      # if: env.tag_exists == 'false'  # Only create release if tag does not exist
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
@@ -95,7 +95,7 @@ jobs:
         prerelease: false
 
     - name: Upload Release Asset
-      if: ${{ github.event.inputs.upload_artifact == 'true' && env.tag_exists == 'false' }}  # Only upload if tag does not exist
+      # if: ${{ github.event.inputs.upload_artifact == 'true' && env.tag_exists == 'false' }}  # Only upload if tag does not exist
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
